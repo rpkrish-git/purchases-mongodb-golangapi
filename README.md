@@ -5,7 +5,7 @@ This is my Multi Currency Purchase Transaction API with Golang &amp; MongoDB
 
 Docker should be started and running
 
-MongoDB should be started and running on the port: 27017
+MongoDB should be started and running inside the Docker on the port: 27017
 
 (External API) Treasury Reporting Rates of Exchange API must be available and running
 
