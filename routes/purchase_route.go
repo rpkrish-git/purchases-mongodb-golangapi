@@ -12,6 +12,6 @@ func PurchaseRoute(router *mux.Router) {
 	router.HandleFunc("/purchases/{transactionId}", controllers.GetATransaction()).Methods("POST")
 	router.HandleFunc("/purchases/{transactionId}", controllers.EditATransaction()).Methods("PUT")
 	router.HandleFunc("/purchases/{transactionId}", controllers.DeleteATransaction()).Methods("DELETE")
-	router.HandleFunc("/purchases", controllers.GetAllPurchases()).Methods("GET")
+	router.HandleFunc("/purchases", controllers.GetAllPurchases()).Methods("POST")
 	//router.HandleFunc("/health-check", controllers.HealthCheck()).Methods("GET")
 }

@@ -218,11 +218,21 @@ func DeleteATransaction() http.HandlerFunc {
 func GetAllPurchases() http.HandlerFunc {
 	return func(rw http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		var transactions []models.Transaction
+		var convTransactions []models.ConvertedTransaction
 		defer cancel()
+		var body requestBody
+		var transaction models.Transaction
+		json.NewDecoder(r.Body).Decode(&body.search)
+
+		exchRate, err := getCurrencyExchangeRate(body.search.CountryCurrency)
+		if err != nil {
+			rw.WriteHeader(http.StatusInternalServerError)
+			response := responses.PurchaseResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}}
+			json.NewEncoder(rw).Encode(response)
+			return
+		}
 
 		results, err := purchaseCollection.Find(ctx, bson.M{})
-
 		if err != nil {
 			rw.WriteHeader(http.StatusInternalServerError)
 			response := responses.PurchaseResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}}
@@ -233,18 +243,28 @@ func GetAllPurchases() http.HandlerFunc {
 		//reading from the db in the optmial way
 		defer results.Close(ctx)
 		for results.Next(ctx) {
-			var singleTransaction models.Transaction
-			if err := results.Decode(&singleTransaction); err != nil {
+			if err = results.Decode(&transaction); err != nil {
 				rw.WriteHeader(http.StatusInternalServerError)
 				response := responses.PurchaseResponse{Status: http.StatusInternalServerError, Message: "error", Data: map[string]interface{}{"data": err.Error()}}
 				json.NewEncoder(rw).Encode(response)
 				return
 			}
-			transactions = append(transactions, singleTransaction)
+			convRate, _ := strconv.ParseFloat(strings.TrimSpace(exchRate.Rate), 64)
+			convPrice, _ := strconv.ParseFloat(fmt.Sprintf("%.2f", transaction.PurchaseAmount*convRate), 64)
+			convTrans := models.ConvertedTransaction{
+				Id:                      transaction.Id.String(),
+				Description:             transaction.Description,
+				OriginalPriceInUSDollar: transaction.PurchaseAmount,
+				TransactionDateTime:     transaction.TransactionDateTime,
+				ConvertedCurrencyDesc:   exchRate.Currency,
+				ExchangeRate:            exchRate.Rate,
+				ConvertedPrice:          convPrice,
+			}
+			convTransactions = append(convTransactions, convTrans)
 		}
 
 		rw.WriteHeader(http.StatusOK)
-		response := responses.PurchaseResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": transactions}}
+		response := responses.PurchaseResponse{Status: http.StatusOK, Message: "success", Data: map[string]interface{}{"data": convTransactions}}
 		json.NewEncoder(rw).Encode(response)
 	}
 }
