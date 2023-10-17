@@ -1,7 +1,15 @@
 # purchases-mongodb-golangapi
 This is my Multi Currency Purchase Transaction API with Golang &amp; MongoDB
 
-Purchase API has following end points:
+*Pre-Requisites:*
+
+Docker should be started and running
+
+MongoDB should be started and running on the port: 27017
+
+(External API) Treasury Reporting Rates of Exchange API must be available and running
+
+*Purchase API has following end points:*
 
 healthcheck (GET): http://localhost:6000/health
 
@@ -26,3 +34,4 @@ retrieve a transaction (POST): http://localhost:6000/purchases/652dee955c34520ec
 
 retrieve all transactions (POST): http://localhost:6000/purchases   
     input body: ```{"currency":"australia-dollar"}```
+
